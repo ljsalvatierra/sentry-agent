@@ -18,7 +18,12 @@ def main():
     )
     available_agents = [sentry_agent]
     while True:
-        query = input("<Triage Agent> Please enter a query.\n<User> ")
+        query = input(
+            "<Triage Agent> Please enter a query (or 'quit'/'exit' to end).\n<User> "
+        )
+        if query.lower() in ["quit", "exit"]:
+            print("Goodbye!")
+            break
         # TODO: select the best Agent for the current task
         agent = available_agents[0]
         agent.invoke(llm, query)
