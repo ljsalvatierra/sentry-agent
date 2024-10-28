@@ -134,11 +134,97 @@ def sentry_get_issue(issue_id: int) -> str:
         return f"Error processing Sentry response: {e}"
 
 
+@tool
+def sentry_list_users(team_slug: str) -> str:
+    """Returns a formatted string with a list of users in a specific Sentry team"""
+    sentry_url = os.getenv("SENTRY_HTTP_URL", "http://127.0.0.1:9000")
+    sentry_organization_slug = os.getenv("SENTRY_ORGANIZATION_SLUG", "sentry")
+    auth_token = os.getenv("SENTRY_AUTH_TOKEN", False)
+    if not auth_token:
+        return "Error: Please set SENTRY_AUTH_TOKEN."
+
+    try:
+        # Sentry API endpoint for team members
+        url = (
+            f"{sentry_url}/api/0/teams/{sentry_organization_slug}/{team_slug}/members/"
+        )
+
+        # Headers for authentication
+        headers = {
+            "Authorization": f"Bearer {auth_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Make the GET request to Sentry API
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        # Process the response
+        data = response.json()
+        if not data:
+            return f"No users found in team: {team_slug}"
+
+        # Format the list of users
+        formatted_users = f"List of Sentry Users in team '{team_slug}':\n"
+        for user in data:
+            formatted_users += f"ID: {user['id']}, Email: {user['email']}, Name: {user.get('name', 'N/A')}\n"
+
+        # Return the formatted string
+        return formatted_users
+    except requests.RequestException as e:
+        return f"Error fetching users from Sentry: {e}"
+    except (KeyError, ValueError) as e:
+        return f"Error processing Sentry response: {e}"
+
+
+@tool
+def sentry_list_project_teams(project: str) -> str:
+    """Returns a formatted string with a list of teams associated with a given project in Sentry"""
+    sentry_url = os.getenv("SENTRY_HTTP_URL", "http://127.0.0.1:9000")
+    sentry_organization_slug = os.getenv("SENTRY_ORGANIZATION_SLUG", "sentry")
+    auth_token = os.getenv("SENTRY_AUTH_TOKEN", False)
+    if not auth_token:
+        return "Error: Please set SENTRY_AUTH_TOKEN."
+
+    try:
+        # Sentry API endpoint for project teams
+        url = f"{sentry_url}/api/0/projects/{sentry_organization_slug}/{project}/teams/"
+
+        # Headers for authentication
+        headers = {
+            "Authorization": f"Bearer {auth_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Make the GET request to Sentry API
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        # Process the response
+        data = response.json()
+        if not data:
+            return f"No teams found for project: {project}"
+
+        # Format the list of teams
+        formatted_teams = f"Teams associated with project '{project}':\n"
+        for team in data:
+            formatted_teams += f"ID: {team['id']}, Slug: {team['slug']}, Name: {team.get('name', 'N/A')}\n"
+
+        # Return the formatted string
+        return formatted_teams
+    except requests.RequestException as e:
+        return f"Error fetching teams from Sentry: {e}"
+    except (KeyError, ValueError) as e:
+        return f"Error processing Sentry response: {e}"
+
+
 sentry_agent = Agent(
     name="Sentry Agent",
     instructions="""You are a helpful assistant.""",
     functions={
         "sentry_list_issues": sentry_list_issues,
         "sentry_get_issue": sentry_get_issue,
+        "sentry_list_users": sentry_list_users,
+        "sentry_list_project_teams": sentry_list_project_teams,
     },
 )
