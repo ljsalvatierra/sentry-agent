@@ -113,16 +113,19 @@ def sentry_get_issue(issue_id: int) -> str:
         formatted_data += f"Event ID: {event_data['eventID']}\n"
         formatted_data += f"Timestamp: {event_data['dateCreated']}\n"
         formatted_data += f"Release: {event_data.get('release', 'N/A')}\n"
-        formatted_data += "\nTraceback:\n"
-        for frame in traceback:
-            formatted_data += f"File: {frame.get('filename', 'N/A')}\n"
-            formatted_data += f"Line: {frame.get('lineNo', 'N/A')}\n"
-            formatted_data += f"Function: {frame.get('function', 'N/A')}\n"
+        formatted_data += "\nTraceback (Last Frame):\n"
+        if traceback:
+            last_frame = traceback[-1]
+            formatted_data += f"File: {last_frame.get('filename', 'N/A')}\n"
+            formatted_data += f"Line: {last_frame.get('lineNo', 'N/A')}\n"
+            formatted_data += f"Function: {last_frame.get('function', 'N/A')}\n"
             formatted_data += "Context:\n"
-            context = frame.get("context", [])
+            context = last_frame.get("context", [])
             for line_num, line_content in context:
                 formatted_data += f"{line_num:4d} | {line_content}\n"
             formatted_data += "-" * 50 + "\n"
+        else:
+            formatted_data += "No traceback available.\n"
         return formatted_data
 
     except requests.RequestException as e:
